@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecurePay — Digital Wallet Dashboard</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+    }
+    .glass {
+      background: rgba(18, 24, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .neon-glow {
+      box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.35);
+    }
+    .neon-glow-green {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Navigation -->
+  <header class="glass sticky top-0 z-50 px-6 py-4 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-extrabold text-xl shadow-lg shadow-blue-500/20">
+          <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">SecurePay</h1>
+          <p class="text-xs text-slate-400 font-medium">Digital Wallet & Ledger System</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Live API status badge -->
+        <div id="statusBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>API Connected</span>
+        </div>
+
+        <!-- Swagger Link -->
+        <a href="/api-docs" target="_blank" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition">
+          <i data-lucide="terminal" class="w-4 h-4 text-blue-400"></i>
+          <span>Swagger Docs</span>
+        </a>
+
+        <!-- User profile pill / Logout button -->
+        <div id="navUserSection" class="hidden items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700">
+            <div class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold" id="navAvatar">U</div>
+            <span class="text-xs font-semibold text-slate-300" id="navUsername">username</span>
+          </div>
+          <button onclick="logout()" class="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition" title="Logout">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
+
+    <!-- Auth View (When Logged Out) -->
+    <div id="authSection" class="max-w-md mx-auto my-8 space-y-6">
+      
+      <!-- Welcome Intro -->
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl font-extrabold text-white">Welcome to SecurePay</h2>
+        <p class="text-sm text-slate-400">Select a pre-seeded demo user or log in to access your digital wallet.</p>
+      </div>
+
+      <!-- Quick 1-Click Demo Login Bar -->
+      <div class="glass p-4 rounded-2xl border border-slate-800 space-y-3">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block text-center">⚡ 1-Click Instant Demo Login</span>
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="demoLogin('alice@example.com')" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-semibold text-xs transition">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Alice ($1,500)</span>
+          </button>
+          <button onclick="demoLogin('bob@example.com')" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 font-semibold text-xs transition">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Bob ($250)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Login / Register Card -->
+      <div class="glass p-6 rounded-2xl border border-slate-800 space-y-5">
+        <div class="flex border-b border-slate-800 pb-3">
+          <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 pb-2 text-sm font-bold text-blue-400 border-b-2 border-blue-500">Log In</button>
+          <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 pb-2 text-sm font-semibold text-slate-400 hover:text-white">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Email or Username</label>
+            <input type="text" id="loginIdentifier" value="alice@example.com" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-blue-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <input type="password" id="loginPassword" value="SecureP@ss123" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-blue-500 focus:outline-none transition">
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-sm text-white transition shadow-lg shadow-blue-600/30">
+            Sign In to Wallet
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Full Legal Name</label>
+            <input type="text" id="regFullName" placeholder="e.g. David Miller" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-blue-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Username</label>
+            <input type="text" id="regUsername" placeholder="e.g. david_m" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-blue-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+            <input type="email" id="regEmail" placeholder="e.g. david@example.com" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-blue-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <input type="password" id="regPassword" placeholder="Min 8 chars, 1 uppercase, 1 special char" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm focus:border-blue-500 focus:outline-none transition">
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-sm text-white transition shadow-lg shadow-emerald-600/30">
+            Create Account & Wallet
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- Dashboard View (When Logged In) -->
+    <div id="dashboardSection" class="hidden space-y-8">
+      
+      <!-- Top Overview Hero -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Balance Card -->
+        <div class="glass-card p-6 rounded-3xl relative overflow-hidden neon-glow flex flex-col justify-between">
+          <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Available Balance</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold" id="walletStatusBadge">ACTIVE</span>
+            </div>
+            <div class="mt-4 flex items-baseline gap-2">
+              <span class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white" id="displayBalance">$0.00</span>
+              <span class="text-sm font-bold text-slate-400" id="displayCurrency">USD</span>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <span class="truncate max-w-[200px]" id="displayWalletId">Wallet ID: Loading...</span>
+            <button onclick="loadWalletData()" class="p-1.5 hover:text-white transition" title="Refresh Balance">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Financial Stats -->
+        <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2">
+              <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Total Deposits</p>
+              <h3 class="text-xl font-bold text-white mt-1" id="statDeposits">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center mb-2">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Total Withdrawals</p>
+              <h3 class="text-xl font-bold text-white mt-1" id="statWithdrawals">$0.00</h3>
+            </div>
+          </div>
+
+          <div class="glass p-5 rounded-2xl col-span-2 sm:col-span-1 flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2">
+              <i data-lucide="repeat" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Transfers Sent</p>
+              <h3 class="text-xl font-bold text-white mt-1" id="statTransfers">$0.00</h3>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Center (Deposit, Withdraw, Transfer) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- 1. Send Money (Atomic Transfer) -->
+        <div class="glass p-6 rounded-3xl space-y-4 border border-blue-500/20">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+              <i data-lucide="send" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">Send Money</h3>
+              <p class="text-xs text-slate-400">Atomic peer-to-peer transfer</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleTransfer(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Recipient (Username or Email)</label>
+              <input type="text" id="transferRecipient" placeholder="e.g. bob_builder or alice_wonder" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Amount ($)</label>
+              <input type="number" id="transferAmount" step="0.01" min="1" placeholder="50.00" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Note (Optional)</label>
+              <input type="text" id="transferNote" placeholder="Dinner, rent, etc." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-md shadow-blue-600/30">
+              Execute Transfer
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. Deposit Funds -->
+        <div class="glass p-6 rounded-3xl space-y-4 border border-emerald-500/20">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">Deposit Funds</h3>
+              <p class="text-xs text-slate-400">Simulate wallet credit</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleDeposit(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Deposit Amount ($)</label>
+              <input type="number" id="depositAmount" step="0.01" min="1" placeholder="100.00" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="setDepositAmount(50)" class="flex-1 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">+ $50</button>
+              <button type="button" onclick="setDepositAmount(100)" class="flex-1 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">+ $100</button>
+              <button type="button" onclick="setDepositAmount(500)" class="flex-1 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">+ $500</button>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+              <input type="text" id="depositDesc" placeholder="Initial funding" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/30">
+              Confirm Deposit
+            </button>
+          </form>
+        </div>
+
+        <!-- 3. Withdraw Funds -->
+        <div class="glass p-6 rounded-3xl space-y-4 border border-rose-500/20">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400">
+              <i data-lucide="minus-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">Withdraw Funds</h3>
+              <p class="text-xs text-slate-400">Simulate payout / cashout</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleWithdraw(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Withdraw Amount ($)</label>
+              <input type="number" id="withdrawAmount" step="0.01" min="1" placeholder="50.00" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-rose-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Reason / Description</label>
+              <input type="text" id="withdrawDesc" placeholder="ATM Payout" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-rose-500">
+            </div>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition shadow-md shadow-rose-600/30">
+              Process Withdrawal
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Transaction Ledger Table -->
+      <div class="glass p-6 rounded-3xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Transaction Audit Ledger</h3>
+            <p class="text-xs text-slate-400">Immutable ledger records with balance snapshots</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="filterType" onchange="loadTransactions()" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-300 focus:outline-none">
+              <option value="">All Types</option>
+              <option value="DEPOSIT">Deposit</option>
+              <option value="WITHDRAWAL">Withdrawal</option>
+              <option value="TRANSFER_OUT">Transfer Out</option>
+              <option value="TRANSFER_IN">Transfer In</option>
+            </select>
+            <button onclick="loadTransactions()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Refresh Transactions">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 text-xs font-semibold">
+                <th class="py-3 px-4">Reference</th>
+                <th class="py-3 px-4">Type</th>
+                <th class="py-3 px-4">Amount</th>
+                <th class="py-3 px-4">Balance After</th>
+                <th class="py-3 px-4">Details / Party</th>
+                <th class="py-3 px-4">Timestamp</th>
+                <th class="py-3 px-4 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTableBody" class="divide-y divide-slate-800/60 text-xs">
+              <tr>
+                <td colspan="7" class="py-8 text-center text-slate-500">Loading transactions...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="glass py-4 px-6 border-t border-slate-800 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>SecurePay Digital Wallet System &copy; 2026. Production Backend Portfolio Project.</p>
+      <div class="flex items-center gap-4">
+        <span>PostgreSQL 16</span>
+        <span>•</span>
+        <span>Prisma ORM</span>
+        <span>•</span>
+        <span>JWT Authentication</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Alert -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-semibold pointer-events-none"></div>
+
+  <!-- Client-side Logic -->
+  <script>
+    const API_BASE = '/api/v1';
+    let token = localStorage.getItem('securepay_token');
+    let currentUser = null;
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Check if token exists on load
+    window.addEventListener('DOMContentLoaded', () => {
+      if (token) {
+        verifySession();
+      } else {
+        showAuthView();
+      }
+    });
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.className = `fixed bottom-6 right-6 z-50 transform transition-all duration-300 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-semibold ${
+        isError ? 'bg-rose-600 text-white shadow-rose-600/30' : 'bg-emerald-600 text-white shadow-emerald-600/30'
+      }`;
+      toast.innerHTML = isError
+        ? `<i data-lucide="alert-circle" class="w-5 h-5"></i><span>${message}</span>`
+        : `<i data-lucide="check-circle" class="w-5 h-5"></i><span>${message}</span>`;
+      lucide.createIcons();
+      toast.classList.remove('translate-y-24', 'opacity-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
+    }
+
+    function switchAuthTab(tab) {
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+
+      if (tab === 'login') {
+        tabLogin.className = "flex-1 pb-2 text-sm font-bold text-blue-400 border-b-2 border-blue-500";
+        tabRegister.className = "flex-1 pb-2 text-sm font-semibold text-slate-400 hover:text-white";
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+      } else {
+        tabRegister.className = "flex-1 pb-2 text-sm font-bold text-emerald-400 border-b-2 border-emerald-500";
+        tabLogin.className = "flex-1 pb-2 text-sm font-semibold text-slate-400 hover:text-white";
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+      }
+    }
+
+    async function demoLogin(email) {
+      document.getElementById('loginIdentifier').value = email;
+      document.getElementById('loginPassword').value = 'SecureP@ss123';
+      await handleLogin(new Event('submit'));
+    }
+
+    async function handleLogin(e) {
+      if (e) e.preventDefault();
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password }),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          return showToast(data.message || 'Login failed', true);
+        }
+
+        token = data.data.token;
+        localStorage.setItem('securepay_token', token);
+        currentUser = data.data.user;
+        showToast(`Welcome back, ${currentUser.fullName}!`);
+        showDashboardView();
+      } catch (err) {
+        showToast('Server connection error', true);
+      }
+    }
+
+    async function handleRegister(e) {
+      if (e) e.preventDefault();
+      const fullName = document.getElementById('regFullName').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName, username, email, password }),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          const errMsg = data.errors ? data.errors[0]?.message : data.message;
+          return showToast(errMsg || 'Registration failed', true);
+        }
+
+        token = data.data.token;
+        localStorage.setItem('securepay_token', token);
+        currentUser = data.data.user;
+        showToast('Registration successful! Wallet created.');
+        showDashboardView();
+      } catch (err) {
+        showToast('Server connection error', true);
+      }
+    }
+
+    async function verifySession() {
+      try {
+        const res = await fetch(`${API_BASE}/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          logout();
+          return;
+        }
+
+        currentUser = data.data;
+        showDashboardView();
+      } catch (err) {
+        showAuthView();
+      }
+    }
+
+    function showAuthView() {
+      document.getElementById('authSection').classList.remove('hidden');
+      document.getElementById('dashboardSection').classList.add('hidden');
+      document.getElementById('navUserSection').classList.add('hidden');
+      document.getElementById('navUserSection').classList.remove('flex');
+    }
+
+    function showDashboardView() {
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      document.getElementById('navUserSection').classList.remove('hidden');
+      document.getElementById('navUserSection').classList.add('flex');
+
+      document.getElementById('navUsername').innerText = currentUser.username;
+      document.getElementById('navAvatar').innerText = currentUser.username.charAt(0).toUpperCase();
+
+      loadWalletData();
+      loadTransactions();
+      loadDashboardReports();
+    }
+
+    function logout() {
+      token = null;
+      localStorage.removeItem('securepay_token');
+      showAuthView();
+      showToast('Logged out successfully');
+    }
+
+    async function loadWalletData() {
+      try {
+        const res = await fetch(`${API_BASE}/wallet`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) {
+          const w = data.data;
+          document.getElementById('displayBalance').innerText = `$${w.balance.toFixed(2)}`;
+          document.getElementById('displayCurrency').innerText = w.currency;
+          document.getElementById('displayWalletId').innerText = `ID: ${w.id}`;
+          document.getElementById('walletStatusBadge').innerText = w.status;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function setDepositAmount(val) {
+      document.getElementById('depositAmount').value = val;
+    }
+
+    async function handleDeposit(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('depositAmount').value);
+      const description = document.getElementById('depositDesc').value.trim();
+
+      try {
+        const res = await fetch(`${API_BASE}/wallet/deposit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ amount, description }),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          return showToast(data.message, true);
+        }
+
+        showToast(`Deposited $${amount.toFixed(2)} successfully!`);
+        document.getElementById('depositAmount').value = '';
+        document.getElementById('depositDesc').value = '';
+        loadWalletData();
+        loadTransactions();
+        loadDashboardReports();
+      } catch (err) {
+        showToast('Deposit failed', true);
+      }
+    }
+
+    async function handleWithdraw(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('withdrawAmount').value);
+      const description = document.getElementById('withdrawDesc').value.trim();
+
+      try {
+        const res = await fetch(`${API_BASE}/wallet/withdraw`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ amount, description }),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          return showToast(data.message, true);
+        }
+
+        showToast(`Withdrew $${amount.toFixed(2)} successfully!`);
+        document.getElementById('withdrawAmount').value = '';
+        document.getElementById('withdrawDesc').value = '';
+        loadWalletData();
+        loadTransactions();
+        loadDashboardReports();
+      } catch (err) {
+        showToast('Withdrawal failed', true);
+      }
+    }
+
+    async function handleTransfer(e) {
+      e.preventDefault();
+      const recipientIdentifier = document.getElementById('transferRecipient').value.trim();
+      const amount = parseFloat(document.getElementById('transferAmount').value);
+      const note = document.getElementById('transferNote').value.trim();
+      const idempotencyKey = 'web-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+
+      try {
+        const res = await fetch(`${API_BASE}/transfers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKey,
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ recipientIdentifier, amount, note }),
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          return showToast(data.message, true);
+        }
+
+        showToast(`Transferred $${amount.toFixed(2)} to ${data.data.recipient.username}!`);
+        document.getElementById('transferRecipient').value = '';
+        document.getElementById('transferAmount').value = '';
+        document.getElementById('transferNote').value = '';
+        loadWalletData();
+        loadTransactions();
+        loadDashboardReports();
+      } catch (err) {
+        showToast('Transfer failed', true);
+      }
+    }
+
+    async function loadTransactions() {
+      const type = document.getElementById('filterType').value;
+      const url = type ? `${API_BASE}/transactions?limit=15&type=${type}` : `${API_BASE}/transactions?limit=15`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        const tbody = document.getElementById('transactionTableBody');
+        if (!data.success || !data.data || data.data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-500">No transactions recorded yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.data.map(t => {
+          let badgeColor = 'bg-slate-800 text-slate-300';
+          let sign = '';
+          if (t.type === 'DEPOSIT') { badgeColor = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'; sign = '+'; }
+          if (t.type === 'WITHDRAWAL') { badgeColor = 'bg-rose-500/10 text-rose-400 border border-rose-500/20'; sign = '-'; }
+          if (t.type === 'TRANSFER_IN') { badgeColor = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'; sign = '+'; }
+          if (t.type === 'TRANSFER_OUT') { badgeColor = 'bg-blue-500/10 text-blue-400 border border-blue-500/20'; sign = '-'; }
+
+          const detail = t.transferDetails 
+            ? (t.type === 'TRANSFER_OUT' ? `To: ${t.transferDetails.receiver}` : `From: ${t.transferDetails.sender}`)
+            : (t.description || '-');
+
+          const date = new Date(t.createdAt).toLocaleString(undefined, {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+
+          return `
+            <tr class="hover:bg-slate-800/30 transition">
+              <td class="py-3 px-4 font-mono text-[11px] text-slate-400">${t.reference}</td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${badgeColor}">${t.type}</span>
+              </td>
+              <td class="py-3 px-4 font-bold ${sign === '+' ? 'text-emerald-400' : 'text-slate-200'}">${sign}$${t.amount.toFixed(2)}</td>
+              <td class="py-3 px-4 text-slate-300 font-medium">$${t.balanceAfter.toFixed(2)}</td>
+              <td class="py-3 px-4 text-slate-400 truncate max-w-[180px]">${detail}</td>
+              <td class="py-3 px-4 text-slate-500 text-[11px]">${date}</td>
+              <td class="py-3 px-4 text-right">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">${t.status}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadDashboardReports() {
+      try {
+        const res = await fetch(`${API_BASE}/reports/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) {
+          const s = data.data.summary;
+          document.getElementById('statDeposits').innerText = `$${s.deposits.totalAmount.toFixed(2)}`;
+          document.getElementById('statWithdrawals').innerText = `$${s.withdrawals.totalAmount.toFixed(2)}`;
+          document.getElementById('statTransfers').innerText = `$${s.transfersSent.totalAmount.toFixed(2)}`;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>

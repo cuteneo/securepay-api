@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WalletStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  fullName    String
+  phoneNumber String?  @unique
+  role        String   @default("USER")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  wallet      Wallet?
+
+  @@index([email])
+  @@index([username])
+}
+
+model Wallet {
+  id        String       @id @default(uuid())
+  userId    String       @unique
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Decimal      @default(0.00) @db.Decimal(14, 2)
+  currency  String       @default("USD")
+  status    WalletStatus @default(ACTIVE)
+  version   Int          @default(1)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  transactions      Transaction[]
+  sentTransfers     Transfer[]    @relation("SentTransfers")
+  receivedTransfers Transfer[]    @relation("ReceivedTransfers")
+
+  @@index([userId])
+}
+
+model Transaction {
+  id           String            @id @default(uuid())
+  reference    String            @unique
+  walletId     String
+  wallet       Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type         TransactionType
+  amount       Decimal           @db.Decimal(14, 2)
+  balanceAfter Decimal           @db.Decimal(14, 2)
+  status       TransactionStatus @default(COMPLETED)
+  description  String?
+  transferId   String?
+  transfer     Transfer?         @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  metadata     Json?
+  createdAt    DateTime          @default(now())
+
+  @@index([walletId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([reference])
+}
+
+model Transfer {
+  id               String         @id @default(uuid())
+  reference        String         @unique
+  senderWalletId   String
+  senderWallet     Wallet         @relation("SentTransfers", fields: [senderWalletId], references: [id], onDelete: Restrict)
+  receiverWalletId String
+  receiverWallet   Wallet         @relation("ReceivedTransfers", fields: [receiverWalletId], references: [id], onDelete: Restrict)
+  amount           Decimal        @db.Decimal(14, 2)
+  status           TransferStatus @default(COMPLETED)
+  note             String?
+  createdAt        DateTime       @default(now())
+
+  transactions Transaction[]
+
+  @@index([senderWalletId])
+  @@index([receiverWalletId])
+  @@index([reference])
+}
+
+model IdempotencyKey {
+  key          String   @id
+  userId       String
+  endpoint     String
+  requestHash  String
+  responseCode Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@index([userId])
+  @@index([expiresAt])
+}
