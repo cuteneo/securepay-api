@@ -12,7 +12,7 @@
 
 ---
 
-## 🎯 Executive Summary
+##  Executive Summary
 
 In fintech systems, a minor glitch can cause unauthorized money creation, race conditions, or duplicate debits. **SecurePay** was engineered to solve these core challenges using production-standard backend principles:
 - **Atomic Double-Entry Bookkeeping:** Every balance modification records mirrored debits/credits with point-in-time balance snapshots.
@@ -23,7 +23,7 @@ In fintech systems, a minor glitch can cause unauthorized money creation, race c
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Layer | Technologies |
 |---|---|
@@ -40,7 +40,7 @@ In fintech systems, a minor glitch can cause unauthorized money creation, race c
 
 ---
 
-## 🏗️ Architecture & Project Structure
+##  Architecture & Project Structure
 
 SecurePay enforces a strict 3-tier modular architecture:
 
@@ -99,7 +99,7 @@ securepay/
 
 ---
 
-## ⚡ Quick Start Guide
+## Quick Start Guide
 
 ### Prerequisites
 - Node.js (v18.0.0 or higher)
@@ -156,7 +156,7 @@ Explore interactive API docs at: `http://localhost:5000/api-docs`.
 
 ---
 
-## 🐳 Docker Deployment
+##  Docker Deployment
 
 Run the complete stack (PostgreSQL + SecurePay API) with one command:
 ```bash
@@ -169,7 +169,7 @@ docker-compose down
 
 ---
 
-## 🧪 Automated Testing
+## Automated Testing
 
 SecurePay features a comprehensive automated test suite testing business rules, validation constraints, and security defenses:
 
@@ -182,16 +182,16 @@ npm run test:coverage
 ```
 
 ### What is tested:
-- ✅ **Atomic Transfers:** Balances update simultaneously with double-entry transaction records.
-- ✅ **Overdraft Prevention:** Transfers with amounts exceeding available balances throw `400 Bad Request`.
-- ✅ **Self-Transfer Guard:** Users cannot send funds to their own wallet.
-- ✅ **Idempotency Replay:** Repeated calls with the same `Idempotency-Key` return the cached response without debiting again.
-- ✅ **Input Validation:** Zod rejects invalid emails, weak passwords, and non-positive numbers.
-- ✅ **Security Guards:** Protected endpoints deny requests without valid Bearer tokens.
+-  **Atomic Transfers:** Balances update simultaneously with double-entry transaction records.
+-  **Overdraft Prevention:** Transfers with amounts exceeding available balances throw `400 Bad Request`.
+-  **Self-Transfer Guard:** Users cannot send funds to their own wallet.
+-  **Idempotency Replay:** Repeated calls with the same `Idempotency-Key` return the cached response without debiting again.
+-  **Input Validation:** Zod rejects invalid emails, weak passwords, and non-positive numbers.
+-  **Security Guards:** Protected endpoints deny requests without valid Bearer tokens.
 
 ---
 
-## 📚 API Endpoints Overview
+##  API Endpoints Overview
 
 | Method | Endpoint | Authentication | Description |
 |---|---|---|---|
@@ -213,7 +213,7 @@ npm run test:coverage
 
 ---
 
-## 🚀 Cloud Deployment Instructions
+##  Cloud Deployment Instructions
 
 ### Option 1: Render / Railway (Recommended)
 1. Fork or push this repository to your GitHub account.
@@ -228,7 +228,7 @@ npm run test:coverage
 
 ---
 
-## 💼 Resume Bullet Points for Final-Year Students
+##  Resume Bullet Points for Final-Year Students
 
 Add these impact-focused bullet points to your resume:
 
@@ -241,7 +241,7 @@ Add these impact-focused bullet points to your resume:
 
 ---
 
-## 🎤 Backend Interview Questions & Answers
+##  Backend Interview Questions & Answers
 
 ### Q1: Why did you use database transactions for transfers? What happens if the server crashes halfway?
 > **Answer:** In a money transfer, debiting the sender and crediting the recipient must be **atomic**. If the server crashes or the database disconnects after debiting the sender, money would vanish from the system without reaching the recipient. By wrapping both operations, the transfer record, and the ledger transactions in a single Prisma/PostgreSQL transaction (`prisma.$transaction`), we ensure atomicity: either every update commits permanently, or the entire operation rolls back to the previous state with zero side effects.
@@ -257,5 +257,5 @@ Add these impact-focused bullet points to your resume:
 
 ---
 
-## 📄 License
+##  License
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
